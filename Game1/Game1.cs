@@ -1,25 +1,27 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
+using System;
 namespace Game1
 {
     /// <summary>
     /// This is the main type for your game.
-    /// </summary>
+    /// </summary
+    /// 
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Texture2D texture;
-        float rotation = 0f;
+        Texture2D field;
+        Texture2D head;
+        init start;
+
         public Game1()
         {
-
             graphics = new GraphicsDeviceManager(this);
             graphics.PreferredBackBufferHeight = 640;
             graphics.PreferredBackBufferWidth = 640;
-           // graphics.IsFullScreen = true;
+            //graphics.IsFullScreen = true;
             Content.RootDirectory = "Content";
         }
 
@@ -32,7 +34,6 @@ namespace Game1
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            Texture2D texture = Content.Load<Texture2D>("Terrain1-1");
             base.Initialize();
         }
 
@@ -40,11 +41,15 @@ namespace Game1
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
         /// </summary>
+        private Rectangle _viewPortRectangle;
+        private Texture2D _background;
+
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            texture = Content.Load<Texture2D>("Terrain1-1");
+            start = new init();
+            start.create();
             // TODO: use this.Content to load your game content here
         }
 
@@ -62,13 +67,12 @@ namespace Game1
         /// checking for collisions, gathering input, and playing audio.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Update(GameTime gameTime)
+        protected override void Update(GameTime gameTime)//игровая логика
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
+            
             // TODO: Add your update logic here
-            rotation = (rotation + 0.001f) % 360;
             base.Update(gameTime);
         }
 
@@ -76,15 +80,13 @@ namespace Game1
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
+        protected override void Draw(GameTime gameTime)//перерисовка
         {
-            GraphicsDevice.Clear(Color.Yellow);
-            spriteBatch.Begin(SpriteSortMode.BackToFront);
-            spriteBatch.Draw(texture,new Vector2(320, 320), new Rectangle(0, 0, texture.Width, texture.Height), Color.White, 0, new Vector2(texture.Width/2, texture.Height / 2), 2f, SpriteEffects.None, 0f);
-            spriteBatch.End();
+           // start.create_big_field();
             // TODO: Add your drawing code here
 
             base.Draw(gameTime);
         }
     }
+   
 }

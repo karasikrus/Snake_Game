@@ -18,6 +18,7 @@ namespace Game1
         Texture2D big_field;
         Texture2D snake_head;
         Texture2D snake_body;
+        Texture2D snake_turn;
         Texture2D snake_tail;
         Texture2D food;
         int score;
@@ -58,6 +59,7 @@ namespace Game1
             snake_head = Content.Load<Texture2D>("snakehead");
             snake_body = Content.Load<Texture2D>("snakebody1");
             snake_tail = Content.Load<Texture2D>("Snaketail1");
+            snake_turn = Content.Load<Texture2D>("Snaketurn");
         }
         private void init_food()
         {
@@ -71,57 +73,119 @@ namespace Game1
             food = Content.Load<Texture2D>("Apple");
 
         }
-        
-        private void draw_field(int a, int b)
+           
+        private int where_is_min(int i, int j, int key)//-1 снизу, 2 - сверху, 3 - слева, 4 - справа
         {
-            for(int i = 0; i < a; i++)
+            int res = 0;
+            if (field[(i + 21) % 20, j] == key - 1)
             {
-                for(int j = 0; j < b; j++)
-                {
-                    spriteBatch.Draw(big_field, new Vector2(i*18, j*18), new Rectangle(0, 0, big_field.Width, big_field.Height), 
-                        Color.White, 0, new Vector2(big_field.Width / 2, big_field.Height / 2), 1f, SpriteEffects.None, 1f);
-                }
+                res = 1;
             }
-        }
-        private void draw_snake()
-        {
-            spriteBatch.Draw(snake_head, new Vector2(x_head * 18, y_head * 18), new Rectangle(0, 0, snake_head.Width, snake_head.Height),
-                        Color.White, rotation, new Vector2(snake_head.Width / 2, snake_head.Height / 2), 1f, SpriteEffects.None, 0f);
-            int cur = 2;
-            int cur_pos_y = y_head;
-            int cur_pos_x = x_head;
-            while(cur <= length)
+            if (field[(i + 19) % 20, j] == key - 1)
             {
-                if(cur_pos_y > 0 && field[cur_pos_y - 1, cur_pos_x] == cur)
+                res = 2;
+            }
+            if (field[i, (j + 19) % 20] == key - 1)
+            {
+                res = 3;
+            }
+            if (field[i, (j + 21) % 20] == key - 1)
+            {
+                res = 4;
+            }
+            return res;
+        }
+        private int where_is_max(int i, int j, int key)
+        {
+            int res = 0;
+            if (field[(i + 21) % 20, j] == key + 1)
+            {
+                res = 1;
+            }
+            if (field[(i + 19) % 20, j] == key + 1)
+            {
+                res = 2;
+            }
+            if (field[i, (j + 19) % 20] == key + 1)
+            {
+                res = 3;
+            }
+            if (field[i, (j + 21) % 20] == key + 1)
+            {
+                res = 4;
+            }
+            return res;
+        }
+        private void draw_game()
+        {
+            for(int i = 0; i < 20; i++)
+            {
+                for(int j = 0; j < 20; j++)
                 {
-                    spriteBatch.Draw(snake_body, new Vector2(cur_pos_x * 18, (cur_pos_y-1) * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                        Color.White, 0, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
-                    cur_pos_y--;
-                    continue;
-                }
-                if(cur_pos_y < 19 && field[cur_pos_y + 1, cur_pos_x] == cur)
-                {
+                    spriteBatch.Draw(big_field, new Vector2(i * 18, j * 18), new Rectangle(0, 0, big_field.Width, big_field.Height),
+                                 Color.White, 0, new Vector2(big_field.Width / 2, big_field.Height / 2), 1f, SpriteEffects.None, 1f);
+                    if (field[i, j] != 0)
+                    {
+                        if (field[i, j] == 1)//голова
+                        {
+                            spriteBatch.Draw(snake_head, new Vector2(x_head * 18, y_head * 18), new Rectangle(0, 0, snake_head.Width, snake_head.Height),
+                                Color.White, rotation, new Vector2(snake_head.Width / 2, snake_head.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+                        if (field[i, j] == length)//хвост
+                        {
+                            int temp = where_is_min(i, j, length);
+                            float rotation = 0;
+                            if (temp == 2)
+                            {
+                                rotation = 0;
+                            }
+                            if (temp == 1)
+                            {
+                                rotation = MathHelper.Pi;
+                            }
+                            if (temp == 3)
+                            {
+                                rotation = MathHelper.PiOver2;
+                            }
+                            if (temp == 4)
+                            {
+                                rotation = -MathHelper.PiOver2;
+                            }
+                            spriteBatch.Draw(snake_tail, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_tail.Width, snake_tail.Height),
+                                Color.White, rotation, new Vector2(snake_tail.Width / 2, snake_tail.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+                        int back = where_is_max(i, j, field[i, j]);
+                        int forward = where_is_min(i, j, field[i, j]);
+                        if(back == 1 && forward == 2)
+                        {
+                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
+                                Color.White, 0, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+                        if(back == 2 && forward == 1)
+                        {
+                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
+                                Color.White, MathHelper.Pi, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+                        if(back == 3 && forward == 4)
+                        {
+                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
+                                Color.White, MathHelper.PiOver2, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+                        if(back == 4 && forward == 3)
+                        {
+                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
+                                Color.White, -MathHelper.PiOver2, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
 
-                    spriteBatch.Draw(snake_body, new Vector2(cur_pos_x * 18, (cur_pos_y + 1) * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                        Color.White, 0, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.FlipHorizontally, 0f);
-                    cur_pos_y++;
-                    continue;
+                            
+                    }
                 }
-                if(cur_pos_x > 0 && field[cur_pos_y, cur_pos_x-1] == cur)
-                {
-                    spriteBatch.Draw(snake_body, new Vector2((cur_pos_x-1) * 18, cur_pos_y * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                        Color.White, 0, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
-                    cur_pos_x--;
-                    continue;
-                }
-                if(cur_pos_x < 19 && field[cur_pos_y, cur_pos_x + 1] == cur)
-                {
-                    spriteBatch.Draw(snake_body, new Vector2((cur_pos_x + 1) * 18, cur_pos_y * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                       Color.White, 0, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
-                    cur_pos_x++;
-                    continue;
-                }
-                cur++;
             }
         }
         private void draw_food()
@@ -131,32 +195,48 @@ namespace Game1
         }
         private void move()
         {
-            field[y_head, x_head] = 0;
+            int temp_x = x_head;
+            int temp_y = y_head;
             if(move_direction == 1)
             {
-                y_head--;
-                if (y_head < 0)
-                {
-                    y_head = 19;
-                }
+                y_head = (y_head + 19) % 20;
             }
             if(move_direction == 2)
             {
-                y_head = (y_head + 1) % 20;
+                y_head = (y_head + 21) % 20;
             }
             if(move_direction == 3)
             {
-                x_head = (x_head + 1) % 20;
+                x_head = (x_head + 21) % 20;
             }
             if(move_direction == 4)
             {
-                x_head--;
-                if(x_head < 0)
-                {
-                    x_head = 19;
-                }
+                x_head = (x_head +19) %20;
             }
-            field[y_head, x_head] = 1;
+            int temp = 1;
+            int dir;
+            while(temp != length)
+            {
+                dir = where_is_max(temp_x, temp_y, temp);
+                field[temp_x, temp_y]++;
+                if(dir == 1)
+                {
+                    temp_y = (temp_y+19) % 20;
+                }
+                if(dir == 2)
+                {
+                    temp_y = (temp + 21) % 20;
+                }
+                if(dir == 3)
+                {
+                    temp_x = (temp_x + 19) % 20;
+                }
+                if(dir == 4)
+                {
+                    temp_x = (temp_x + 21) % 20;
+                }
+                temp++;
+            }
         }
         private void eat()
         {
@@ -167,7 +247,7 @@ namespace Game1
                   y_food = rand.Next(20);
                 }
             }
-            length++;
+            //length++;
             for (int i = 0; i < 20; i++)
             {
                 for(int j = 0; j < 20; j++)
@@ -271,8 +351,7 @@ namespace Game1
             //ВАЖНО, для того, чтобы работала сортировка спрайтов надо в spriteBatch.Begin() передать SpriteSortMode.BackToFront или SpriteSortMode.FrontToBack
 
             spriteBatch.Begin(SpriteSortMode.BackToFront);
-            draw_field(20, 20);
-            draw_snake();
+            draw_game();
             draw_food();
 
             //В режиме BackToFront мы увидим красный спрайт(он обладает наименьшим layerDepth == 0f)

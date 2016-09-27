@@ -62,14 +62,14 @@ namespace Game1
             snake_turn = Content.Load<Texture2D>("Snaketurn");
         }
         private void init_food()
-        {
-            x_food = rand.Next(20);
+        {           
             x_food = rand.Next(20);
             y_food = rand.Next(20);
-            if(x_food == x_head && y_food == x_head)
-            {
+           while(field[y_head,x_head]>0)//добавить сравнение с координатами тела и хвоста змеи
+             {
                 x_food = rand.Next(20);
-            }
+                y_food = rand.Next(20);
+             }
             food = Content.Load<Texture2D>("Apple");
 
         }
@@ -240,7 +240,7 @@ namespace Game1
         }
         private void eat()
         {
-            if (x_head == x_food & y_head == y_food)
+            if (x_head == x_food && y_head == y_food)
             {
                 while (field[y_food, x_food] == 1) { 
                   x_food = rand.Next(20);

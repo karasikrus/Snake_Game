@@ -213,7 +213,7 @@ namespace Game1
             {
                 x_head = (x_head +19) %20;
             }
-            int temp = 1;
+            int temp = 2;
             int dir;
             while(temp != length)
             {
@@ -237,6 +237,7 @@ namespace Game1
                 }
                 temp++;
             }
+            field[temp_x, temp_y] = 0;
         }
         private void eat()
         {

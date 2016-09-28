@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -17,26 +17,29 @@ namespace Game1
         //Объявим глобальную переменную типа Texture2D для хранения информации о нашей текстуре.
         Texture2D big_field;
         Texture2D snake_head;
-        Texture2D snake_body;
+        Texture2D snake_body_even;
+        Texture2D snake_body_odd;
         Texture2D snake_turn;
-        Texture2D snake_tail;
+        Texture2D snake_tail1;
+        Texture2D snake_tail2;
         Texture2D food;
         int score;
+        int tail_oddity = 0;
         int[,] field;
         int x_head, y_head;// голова змеи
         int x_food, y_food;
         int move_direction; // 1 - up, 2 - down, 3 - right, 4 - left
         float rotation;
         int length;
-        Random rand;
+        Random rand = new Random();
         private void init_field()
         {
             big_field = Content.Load<Texture2D>("Terrain1-1");
         }
         private void init_logic_field()
-        {
+        {   
             field = new int[20, 20];
-            for(int i = 0; i < 20; i++)
+            for (int i = 0; i < 20; i++)
             {
                 for (int j = 0; j < 20; j++)
                 {
@@ -44,91 +47,107 @@ namespace Game1
                 }
             }
             score = 0;
-            field[y_head,x_head] = 1;
-            field[y_head + 1, x_head] = 2;
-            field[y_head + 2, x_head] = 3;
+            
         }
         private void init_snake()
         {
-            rand = new Random();
-            x_head = rand.Next(2,18);
-            y_head = rand.Next(2,18);
+            
+            x_head = rand.Next(2, 17);
+            y_head = rand.Next(2, 17);
+            field[x_head, y_head] = 1;
+            field[x_head, y_head+1] = 2;
+            field[x_head, y_head+2] = 3;
             move_direction = 1;
             length = 3;
             rotation = 0f;
             snake_head = Content.Load<Texture2D>("snakehead");
-            snake_body = Content.Load<Texture2D>("snakebody1");
-            snake_tail = Content.Load<Texture2D>("Snaketail1");
+            snake_body_even = Content.Load<Texture2D>("snakebody1");
+            snake_body_odd = Content.Load<Texture2D>("snakebody2");
+            snake_tail1 = Content.Load<Texture2D>("Snaketail1");
+            snake_tail2 = Content.Load<Texture2D>("Snaketail2");
             snake_turn = Content.Load<Texture2D>("Snaketurn");
         }
         private void init_food()
         {
-            x_food = rand.Next(20);
-            x_food = rand.Next(20);
-            y_food = rand.Next(20);
-            if(x_food == x_head && y_food == x_head)
+            do
             {
                 x_food = rand.Next(20);
-            }
+                y_food = rand.Next(20);
+            } while (field[y_food, x_food] > 0);
             food = Content.Load<Texture2D>("Apple");
 
         }
-           
-        private int where_is_min(int i, int j, int key)//-1 снизу, 2 - сверху, 3 - слева, 4 - справа
+
+        private int where_is_min(int i, int j, int key)// 1 - снизу, 2 - сверху, 3 - слева, 4 - справа
         {
-            int res = 0;
+            int result = 0;
             if (field[(i + 21) % 20, j] == key - 1)
             {
-                res = 1;
+                result = 4;
             }
             if (field[(i + 19) % 20, j] == key - 1)
             {
-                res = 2;
+                result = 3;
             }
             if (field[i, (j + 19) % 20] == key - 1)
             {
-                res = 3;
+                result = 2;
             }
             if (field[i, (j + 21) % 20] == key - 1)
             {
-                res = 4;
+                result = 1;
             }
-            return res;
+            return result;
         }
         private int where_is_max(int i, int j, int key)
         {
-            int res = 0;
+            int result = 0;
             if (field[(i + 21) % 20, j] == key + 1)
             {
-                res = 1;
+                result = 4;
             }
             if (field[(i + 19) % 20, j] == key + 1)
             {
-                res = 2;
+                result = 3;
             }
             if (field[i, (j + 19) % 20] == key + 1)
             {
-                res = 3;
+                result = 2;
             }
             if (field[i, (j + 21) % 20] == key + 1)
             {
-                res = 4;
+                result = 1;
             }
-            return res;
+            return result;
         }
         private void draw_game()
         {
-            for(int i = 0; i < 20; i++)
+            for (int i = 0; i < 20; i++)
             {
-                for(int j = 0; j < 20; j++)
+                for (int j = 0; j < 20; j++)
                 {
-                    spriteBatch.Draw(big_field, new Vector2(i * 18, j * 18), new Rectangle(0, 0, big_field.Width, big_field.Height),
-                                 Color.White, 0, new Vector2(big_field.Width / 2, big_field.Height / 2), 1f, SpriteEffects.None, 1f);
+                    spriteBatch.Draw(big_field, new Vector2(i * 18+9, j * 18+9), new Rectangle(0, 0, big_field.Width, big_field.Height),
+                                 Color.White, 0, new Vector2(big_field.Width/2, big_field.Height/2), 1f, SpriteEffects.None, 1f);
                     if (field[i, j] != 0)
                     {
                         if (field[i, j] == 1)//голова
                         {
-                            spriteBatch.Draw(snake_head, new Vector2(x_head * 18, y_head * 18), new Rectangle(0, 0, snake_head.Width, snake_head.Height),
+                            switch (where_is_max(i,j,1))
+                            {
+                                case 4:
+                                    rotation = -MathHelper.PiOver2;
+                                    break;
+                                case 3:
+                                    rotation = MathHelper.PiOver2;
+                                    break;
+                                case 2:
+                                    rotation = MathHelper.Pi;
+                                    break;
+                                case 1:
+                                    rotation = 0;
+                                    break;
+                            }
+                            spriteBatch.Draw(snake_head, new Vector2(x_head * 18 + 9, y_head * 18 + 9), new Rectangle(0, 0, snake_head.Width, snake_head.Height),
                                 Color.White, rotation, new Vector2(snake_head.Width / 2, snake_head.Height / 2), 1f, SpriteEffects.None, 0f);
                             continue;
                         }
@@ -144,141 +163,194 @@ namespace Game1
                             {
                                 rotation = MathHelper.Pi;
                             }
-                            if (temp == 3)
+                            if (temp == 4)
                             {
                                 rotation = MathHelper.PiOver2;
                             }
-                            if (temp == 4)
+                            if (temp == 3)
                             {
                                 rotation = -MathHelper.PiOver2;
                             }
-                            spriteBatch.Draw(snake_tail, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_tail.Width, snake_tail.Height),
-                                Color.White, rotation, new Vector2(snake_tail.Width / 2, snake_tail.Height / 2), 1f, SpriteEffects.None, 0f);
+                            tail_oddity++;
+                            tail_oddity %= 32;
+                            spriteBatch.Draw(tail_oddity<16? snake_tail1:snake_tail2, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_tail1.Width, snake_tail1.Height),
+                                Color.White, rotation, new Vector2(snake_tail1.Width / 2, snake_tail1.Height / 2), 1f, SpriteEffects.None, 0f);
                             continue;
                         }
                         int back = where_is_max(i, j, field[i, j]);
                         int forward = where_is_min(i, j, field[i, j]);
-                        if(back == 1 && forward == 2)
+                        if (back == 1 && forward == 2)
                         {
-                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                                Color.White, 0, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            spriteBatch.Draw(field[i,j]%2==0?snake_body_even:snake_body_odd, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, 0, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None, 0f);
                             continue;
                         }
-                        if(back == 2 && forward == 1)
+                        if (back == 2 && forward == 1)
                         {
-                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                                Color.White, MathHelper.Pi, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            spriteBatch.Draw(field[i, j] % 2 == 0 ? snake_body_even : snake_body_odd, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, MathHelper.Pi, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None, 0f);
                             continue;
                         }
-                        if(back == 3 && forward == 4)
+                        if (back == 3 && forward == 4)
                         {
-                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                                Color.White, MathHelper.PiOver2, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            spriteBatch.Draw(field[i, j] % 2 == 0 ? snake_body_even : snake_body_odd, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None, 0f);
                             continue;
                         }
-                        if(back == 4 && forward == 3)
+                        if (back == 4 && forward == 3)
                         {
-                            spriteBatch.Draw(snake_body, new Vector2(i * 18, j * 18), new Rectangle(0, 0, snake_body.Width, snake_body.Height),
-                                Color.White, -MathHelper.PiOver2, new Vector2(snake_body.Width / 2, snake_body.Height / 2), 1f, SpriteEffects.None, 0f);
+                            spriteBatch.Draw(field[i, j] % 2 == 0 ? snake_body_even : snake_body_odd, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, -MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None, 0f);
                             continue;
                         }
 
-                            
+                        //-------------------------------------------
+                        if (back == 3 && forward == 2 )
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, 0, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None
+                            , 0f);
+                            continue;
+                        }
+
+                        if (back == 2 && forward == 3)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, -MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.FlipHorizontally
+                            , 0f);
+                            continue;
+                        }
+
+                        //-------------------dwfcqefq34fc-----------------
+
+                        if (back == 2 && forward == 4)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+
+                        if (back == 4 && forward == 2)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, 0, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.FlipHorizontally
+                            , 0f);
+                            continue;
+                        }
+
+                        //------------------------
+
+                        if (back == 1 && forward == 4)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.FlipHorizontally, 0f);
+                            continue;
+                        }
+                        if (back == 4 && forward == 1)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, -MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.FlipVertically, 0f);
+                            continue;
+                        }
+
+                        if (back == 1 && forward == 3)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, -MathHelper.PiOver2, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.None, 0f);
+                            continue;
+                        }
+                        if (back == 3 && forward == 1)
+                        {
+                            spriteBatch.Draw(snake_turn, new Vector2(i * 18 + 9, j * 18 + 9), new Rectangle(0, 0, snake_body_even.Width, snake_body_even.Height),
+                                Color.White, 0, new Vector2(snake_body_even.Width / 2, snake_body_even.Height / 2), 1f, SpriteEffects.FlipVertically, 0f);
+                            continue;
+                        }
+
                     }
                 }
             }
         }
         private void draw_food()
         {
-            spriteBatch.Draw(food, new Vector2(x_food * 18, y_food * 18), new Rectangle(0, 0, food.Width, food.Height),
+            spriteBatch.Draw(food, new Vector2(x_food * 18 + 9, y_food * 18 + 9), new Rectangle(0, 0, food.Width, food.Height),
                         Color.White, 0, new Vector2(food.Width / 2, food.Height / 2), 1f, SpriteEffects.None, 0f);
         }
         private void move()
         {
-            int temp_x = x_head;
-            int temp_y = y_head;
-            if(move_direction == 1)
+            
+            if (move_direction == 1)
             {
                 y_head = (y_head + 19) % 20;
             }
-            if(move_direction == 2)
+            if (move_direction == 2)
             {
                 y_head = (y_head + 21) % 20;
             }
-            if(move_direction == 3)
+            if (move_direction == 3)
             {
                 x_head = (x_head + 21) % 20;
             }
-            if(move_direction == 4)
+            if (move_direction == 4)
             {
-                x_head = (x_head +19) %20;
+                x_head = (x_head + 19) % 20;
             }
-            int temp = 1;
-            int dir;
-            while(temp != length)
-            {
-                dir = where_is_max(temp_x, temp_y, temp);
-                field[temp_x, temp_y]++;
-                if(dir == 1)
-                {
-                    temp_y = (temp_y+19) % 20;
-                }
-                if(dir == 2)
-                {
-                    temp_y = (temp + 21) % 20;
-                }
-                if(dir == 3)
-                {
-                    temp_x = (temp_x + 19) % 20;
-                }
-                if(dir == 4)
-                {
-                    temp_x = (temp_x + 21) % 20;
-                }
-                temp++;
-            }
-        }
-        private void eat()
-        {
-            if (x_head == x_food & y_head == y_food)
-            {
-                while (field[y_food, x_food] == 1) { 
-                  x_food = rand.Next(20);
-                  y_food = rand.Next(20);
-                }
-            }
-            //length++;
-            for (int i = 0; i < 20; i++)
-            {
-                for(int j = 0; j < 20; j++)
-                {
-                    if(field[i,j] == length)
-                    {
 
+            if (field[x_head, y_head] > 1)
+                Initialize();
+
+            for (int i = 0; i < 20; i++)
+                for (int j = 0; j < 20; j++)
+                    if (field[i, j] != 0)
+                    {
+                        field[i, j]++;
+                        if (field[i, j] > length)
+                            field[i, j] = 0;
                     }
+                        
+            field[x_head, y_head] = 1;
+
+            // ---------------------------------------
+
+
+           
+           
+            if (x_head == x_food && y_head == y_food)
+            {
+                score++;
+                while (field[x_food, y_food] > 0)
+                {
+                    x_food = rand.Next(20);
+                    y_food = rand.Next(20);
                 }
+                length++;
             }
+
+            
+                                          
         }
         private void keyboard_move()
         {
             KeyboardState ks = Keyboard.GetState();
-            if(ks.IsKeyDown(Keys.W) && move_direction!=2){
+            if (ks.IsKeyDown(Keys.W) && move_direction != 2)
+            {
                 move_direction = 1;
-                rotation = 0;
+               // rotation = 0;
             }
-            if(ks.IsKeyDown(Keys.S)&& move_direction != 1){
+            if (ks.IsKeyDown(Keys.S) && move_direction != 1)
+            {
                 move_direction = 2;
-                rotation = MathHelper.Pi;
+                //rotation = MathHelper.Pi;
             }
-            if(ks.IsKeyDown(Keys.A) && move_direction != 3){
+            if (ks.IsKeyDown(Keys.A) && move_direction != 3)
+            {
                 move_direction = 4;
-                rotation = -MathHelper.PiOver2;
+                //rotation = -MathHelper.PiOver2;
 
             }
-            if (ks.IsKeyDown(Keys.D)&& move_direction != 4)
+            if (ks.IsKeyDown(Keys.D) && move_direction != 4)
             {
                 move_direction = 3;
-                rotation = MathHelper.PiOver2;
+                //rotation = MathHelper.PiOver2;
             }
 
         }
@@ -334,9 +406,9 @@ namespace Game1
         protected override void Update(GameTime gameTime)
         {
             keyboard_move();
-            eat();
-            delta = (delta+1)%10;
-            if(delta == 0) {
+            delta = (delta + 1) % 10;
+            if (delta == 0)
+            {
                 move();
             }
         }
